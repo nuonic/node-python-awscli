@@ -7,5 +7,5 @@ FROM node:9.10
    && make -j8 \
    && make altinstall \
    && pip3.6 install --upgrade pip \
-   && /usr/local/bin/pip3.6 install awscli --upgrade \
+   && pip3.6 install awscli virtualenv --upgrade \
    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
