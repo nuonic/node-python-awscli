@@ -1,7 +1,7 @@
 FROM node:9.10
  RUN cd /tmp \
    && apt-get update \
-   && apt-get install unzip \
+   && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip \
    && wget https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz \
    && tar xvf Python-3.6.4.tgz \
    && cd /tmp/Python-3.6.4 \
