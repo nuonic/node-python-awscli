@@ -1,7 +1,7 @@
-FROM node:9.10
+FROM node:11
  RUN cd /tmp \
    && apt-get update \
-   && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpng12-dev \
+   && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpng-dev \
    && wget https://www.python.org/ftp/python/3.7.1/Python-3.7.1.tgz \
    && tar xvf Python-3.7.1.tgz \
    && cd /tmp/Python-3.7.1 \
