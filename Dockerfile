@@ -2,9 +2,9 @@ FROM node:14.8.0
  RUN cd /tmp \
    && apt-get update \
    && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpng-dev \
-   && wget https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz \
-   && tar xvf Python-3.6.4.tgz \
-   && cd /tmp/Python-3.6.4 \
+   && wget https://www.python.org/ftp/python/3.6.12/Python-3.6.12.tgz \
+   && tar xvf Python-3.6.12.tgz \
+   && cd /tmp/Python-3.6.12 \
    && ./configure --enable-optimizations \
    && make -j8 \
    && make altinstall \
