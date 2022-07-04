@@ -1,4 +1,4 @@
-FROM node:18.4.0
+FROM node:16
 RUN cd /tmp \
    && apt-get update \
    && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpng-dev \
