@@ -1,7 +1,7 @@
 ACCOUNT:=nuonic
 NAME:=node-python-awscli
 MAJOR:=3
-MINOR:=2
+MINOR:=3
 PATCH:=2
 
 build:

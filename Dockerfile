@@ -21,6 +21,14 @@ RUN cd /tmp \
    && make altinstall \
    && pip3.8 install pipenv==2022.8.5 awscli virtualenv --upgrade
 
+RUN cd /tmp \
+   && wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz \
+   && tar xvf Python-3.9.15.tgz \
+   && cd /tmp/Python-3.9.15 \
+   && ./configure --enable-optimizations --with-ensurepip=install \
+   && make -j8 \
+   && make altinstall
+
 #-- install yarn
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
