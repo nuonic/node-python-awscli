@@ -4,7 +4,7 @@
 #   to match the host architecture and version, and that must also match the lambda
 #   architecture and version. (abi3-manylinux_2_24_x86_64)
 
-FROM debian:stretch-slim
+FROM debian:bullseye-slim
 
 #-- install python 3.8
 #   pipenv is pinned to ==2022.8.5 because of https://github.com/serverless/serverless-python-requirements/issues/716
@@ -25,6 +25,14 @@ RUN cd /tmp \
    && wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz \
    && tar xvf Python-3.9.15.tgz \
    && cd /tmp/Python-3.9.15 \
+   && ./configure --enable-optimizations --with-ensurepip=install \
+   && make -j8 \
+   && make altinstall
+
+RUN cd /tmp \
+   && wget https://www.python.org/ftp/python/3.10.9/Python-3.10.9.tgz \
+   && tar xvf Python-3.10.9.tgz \
+   && cd /tmp/Python-3.10.9 \
    && ./configure --enable-optimizations --with-ensurepip=install \
    && make -j8 \
    && make altinstall
