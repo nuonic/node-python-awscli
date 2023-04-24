@@ -30,9 +30,9 @@ RUN cd /tmp \
    && make altinstall
 
 RUN cd /tmp \
-   && wget https://www.python.org/ftp/python/3.10.9/Python-3.10.9.tgz \
-   && tar xvf Python-3.10.9.tgz \
-   && cd /tmp/Python-3.10.9 \
+   && wget https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz \
+   && tar xvf Python-3.10.11.tgz \
+   && cd /tmp/Python-3.10.11 \
    && ./configure --enable-optimizations --with-ensurepip=install \
    && make -j8 \
    && make altinstall
