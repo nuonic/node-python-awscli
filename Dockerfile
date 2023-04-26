@@ -12,7 +12,7 @@ FROM debian:bullseye-slim
 RUN cd /tmp \
    && apt-get update \
    && apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev \
-   && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpng-dev wget git \
+   && apt-get install -y libgeos-dev libspatialindex-dev zip unzip p7zip libfreetype6-dev libpq-dev libpng-dev wget git \
    && wget https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz \
    && tar xvf Python-3.8.13.tgz \
    && cd /tmp/Python-3.8.13 \
