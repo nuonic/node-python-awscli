@@ -1,6 +1,6 @@
 ACCOUNT:=nuonic
 NAME:=node-python-awscli
-MAJOR:=4
+MAJOR:=5
 MINOR:=0
 PATCH:=0
 
