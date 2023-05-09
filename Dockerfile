@@ -6,7 +6,7 @@ FROM amazonlinux:2
 RUN cd /tmp \
     && amazon-linux-extras install epel -y \
     && yum -y groupinstall "Development Tools" \
-    && yum -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl-devel sqlite-devel readline-devel libffi-devel curl-devel bzip2-devel \
+    && yum -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl11 openssl11-devel sqlite-devel readline-devel libffi-devel curl-devel bzip2-devel \
     && yum -y install proj-devel geos geos-devel spatialindex-devel p7zip p7zip-plugins freetype-devel libpng-devel wget git \
     && wget https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz \
     && tar xvf Python-3.8.13.tgz \
