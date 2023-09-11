@@ -50,3 +50,11 @@ RUN cd /tmp \
     && unzip -p /tmp/packer.zip > ~/.bin/packer-1.7.5 \
     && chmod +x ~/.bin/packer-1.7.5 \
     && rm -rf /var/cache/yum /tmp/* /var/tmp/*
+
+#-- install gnu make 4.4 (for the --output-sync feature)
+
+RUN wget https://ftp.gnu.org/gnu/make/make-4.4.tar.gz -O - | tar -vzxf - -C /tmp \
+    && cd /tmp/make-4.4 \
+    && ./configure \
+    && make install
+    
