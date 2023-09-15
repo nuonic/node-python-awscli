@@ -19,4 +19,4 @@ push:
 	docker image push --all-tags $(ACCOUNT)/$(NAME)
 
 run:
-	docker run --rm -it --name buildtest --volume /Users/guycarpenter/prism:/prism --volume /Users/guycarpenter/.aws:/root/.aws nuonic/node-python-awscli bash
+	docker run --rm -it --name buildtest --platform linux/amd64 --volume /Users/denzil/PycharmProjects/inLoop/prism:/prism --volume /Users/denzil/.aws:/root/.aws nuonic/node-python-awscli bash

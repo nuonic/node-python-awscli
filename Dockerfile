@@ -16,15 +16,6 @@ RUN cd /tmp \
     && make altinstall \
     && pip3.8 install pipenv==2022.8.5 awscli virtualenv --upgrade
 
-
-RUN cd /tmp \
-   && wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz \
-   && tar xvf Python-3.9.15.tgz \
-   && cd /tmp/Python-3.9.15 \
-   && ./configure --enable-optimizations --with-ensurepip=install \
-   && make -j8 \
-   && make altinstall
-
 RUN cd /tmp \
    && wget https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz \
    && tar xvf Python-3.10.11.tgz \
@@ -68,5 +59,7 @@ RUN wget https://ftp.gnu.org/gnu/make/make-4.4.tar.gz -O - | tar -vzxf - -C /tmp
 
 # install pants
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh | bash
+
+ENV PATH "$PATH:/root/bin/pants"
 
     
