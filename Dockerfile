@@ -33,6 +33,14 @@ RUN cd /tmp \
    && make -j8 \
    && make altinstall
 
+RUN cd /tmp \
+   && wget https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz \
+   && tar xvf Python-3.11.5.tgz \
+   && cd /tmp/Python-3.11.5 \
+   && ./configure --enable-optimizations --with-ensurepip=install \
+   && make -j8 \
+   && make altinstall
+
 RUN curl --silent --location https://rpm.nodesource.com/setup_16.x | bash -
 RUN curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 RUN yum -y install epel-release \
@@ -57,4 +65,8 @@ RUN wget https://ftp.gnu.org/gnu/make/make-4.4.tar.gz -O - | tar -vzxf - -C /tmp
     && cd /tmp/make-4.4 \
     && ./configure \
     && make install
+
+# install pants
+RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh | bash
+
     
