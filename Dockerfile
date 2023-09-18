@@ -60,6 +60,6 @@ RUN wget https://ftp.gnu.org/gnu/make/make-4.4.tar.gz -O - | tar -vzxf - -C /tmp
 # install pants
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh | bash
 
-ENV PATH "$PATH:/root/bin/pants"
+ENV PATH="$PATH:/root/bin"
 
     
