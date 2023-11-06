@@ -41,11 +41,10 @@ RUN cd /tmp \
    && make -j8 \
    && make altinstall
 
-RUN curl --silent --location https://rpm.nodesource.com/setup_16.x | bash -
-RUN curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
-RUN yum -y install epel-release \
-    && yum -y update \
-    && yum -y install yarn nodejs
+
+#-- hack to get node18 on linux2:
+RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v18.17.1.tar.gz | tar -zxf - --strip-components=1 -C /usr/local \
+    && npm install --global yarn
 
 #-- install packer 1.22 and packer 1.7.5
 
