@@ -14,7 +14,12 @@ RUN cd /tmp \
     && ./configure --enable-optimizations --with-ensurepip=install \
     && make -j8 \
     && make altinstall \
-    && pip3.8 install pipenv==2022.8.5 awscli virtualenv --upgrade
+    && pip3.8 install pipenv==2022.8.5 virtualenv --upgrade
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip  \
+    && ./aws/install
+
 
 
 RUN cd /tmp \
