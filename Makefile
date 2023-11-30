@@ -1,7 +1,7 @@
 ACCOUNT:=nuonic
 NAME:=node-python-awscli
 MAJOR:=6
-MINOR:=3
+MINOR:=4
 PATCH:=0
 
 build:
@@ -19,4 +19,4 @@ push:
 	docker image push --all-tags $(ACCOUNT)/$(NAME)
 
 run:
-	docker run --rm -it --name buildtest --volume /Users/guycarpenter/prism:/prism --volume /Users/guycarpenter/.aws:/root/.aws nuonic/node-python-awscli bash
+	docker run --rm -it --name buildtest --volume /Users/denzil/prism:/prism --volume /Users/denzil/.aws:/root/.aws nuonic/node-python-awscli bash
