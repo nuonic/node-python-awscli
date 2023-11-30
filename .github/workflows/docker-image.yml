@@ -11,17 +11,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Extract branch name
+      id: branch-name
+      run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
+      env:
+        GITHUB_REF: ${{ github.ref }}
+
     - name: Build and tag the Docker image
-      run: docker build . --file Dockerfile --tag nuonic/node-python-awscli:${GITHUB_REF#refs/heads/}
+      run: docker build . --file Dockerfile --tag nuonic/node-python-awscli:${{ steps.branch-name.outputs.branch }}
 
     - name: Tag Docker Image
 #      if: github.ref == 'refs/heads/master'
       run: |
-          export MAJOR=<major-version>
-          export MINOR=<minor-version>
-          export PATCH=<patch-version>
-          export ACCOUNT=<docker-account>
-          export NAME=<image-name>
           make tag
 
     - name: Log in to Docker Hub
