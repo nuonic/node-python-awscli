@@ -25,11 +25,13 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Build and tag the Docker image
-#      if: github.ref != 'refs/heads/master'
+#     Run if the branch is not master
+      if: github.ref != 'refs/heads/master'
       run: docker build . --file Dockerfile --tag nuonic/node-python-awscli:${{ steps.branch-name.outputs.branch }}
 
     - name: Build, tag and push the image
-#      if: github.ref == 'refs/heads/master'
+#     Run if the branch is master
+      if: github.ref == 'refs/heads/master'
       run: |
           make build tag push
 
