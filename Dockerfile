@@ -79,3 +79,9 @@ ENV PATH="${PATH}:/root/.local/bin"
 # install poetry
 RUN pip3.11 install poetry
 
+# install sqlite newer version
+RUN curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
+    && cd ./sqlite-autoconf-3450100 \
+    && ./configure \
+    && make \
+    && make install
