@@ -63,4 +63,4 @@ RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/ge
 ENV PATH="${PATH}:/root/.local/bin"
 
 # install poetry
-RUN pip3.11 install poetry
+RUN pip3.11 install poetry==2.0.0
