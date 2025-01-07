@@ -64,3 +64,5 @@ ENV PATH="${PATH}:/root/.local/bin"
 
 # install poetry
 RUN pip3.11 install poetry==1.8.5
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
