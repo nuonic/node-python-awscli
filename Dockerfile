@@ -2,6 +2,7 @@ FROM amazonlinux:2023
 
 # Install development tools and dependencies
 RUN cd /tmp \
+    && dnf -y update \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl-devel readline-devel libffi-devel curl-devel bzip2-devel \
     && dnf -y install p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip cmake \
@@ -69,13 +70,21 @@ RUN cd /tmp \
     && make altinstall \
     && rm -r /tmp/Python-3.11.5
 
+# Install Python 3.12
+RUN cd /tmp \
+    && curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf - \
+    && cd /tmp/Python-3.12.11 \
+    && ./configure --enable-optimizations --with-ensurepip=install \
+    && make -j8 \
+    && make altinstall \
+    && rm -r /tmp/Python-3.12.11
+
 # Install Node.js 18
 RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v18.17.1.tar.gz | tar -zxf - --strip-components=1 -C /usr/local \
     && npm install --global yarn
 
 # Install Packer versions
 RUN cd /tmp \
-    && dnf -y update \
     && wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -O /tmp/packer.zip \
     && mkdir ~/.bin \
     && unzip /tmp/packer.zip -d ~/.bin \
