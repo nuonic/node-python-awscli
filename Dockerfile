@@ -4,7 +4,8 @@ FROM amazonlinux:2023
 RUN cd /tmp \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl-devel readline-devel libffi-devel curl-devel bzip2-devel \
-    && dnf -y install p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip cmake
+    && dnf -y install p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip cmake \
+    && dnf -y install libtiff-devel sqlite-devel curl-devel pkgconfig
 
 # Install geospatial libraries (not available in AL2023 repos, must build from source)
 RUN cd /tmp \
