@@ -4,9 +4,32 @@ FROM amazonlinux:2023
 RUN cd /tmp \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl-devel readline-devel libffi-devel curl-devel bzip2-devel \
-    && dnf -y install proj-devel geos geos-devel spatialindex-devel p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip
+    && dnf -y install p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip cmake
 
-# Install sqlite newer version
+# Install geospatial libraries (not available in AL2023 repos, must build from source)
+RUN cd /tmp \
+    && wget https://download.osgeo.org/proj/proj-9.3.0.tar.gz \
+    && tar -xzf proj-9.3.0.tar.gz \
+    && cd proj-9.3.0 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
+    && make -j$(nproc) && make install \
+    && cd /tmp \
+    && wget https://download.osgeo.org/geos/geos-3.12.0.tar.bz2 \
+    && tar -xjf geos-3.12.0.tar.bz2 \
+    && cd geos-3.12.0 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
+    && make -j$(nproc) && make install \
+    && cd /tmp \
+    && wget https://github.com/libspatialindex/spatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.bz2 \
+    && tar -xjf spatialindex-src-1.9.3.tar.bz2 \
+    && cd spatialindex-src-1.9.3 \
+    && ./configure --prefix=/usr \
+    && make -j$(nproc) && make install \
+    && rm -rf /tmp/proj-9.3.0* /tmp/geos-3.12.0* /tmp/spatialindex-src-1.9.3* \
+    && ldconfig
+
 RUN cd /tmp \
     && curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
     && cd ./sqlite-autoconf-3450100 \
