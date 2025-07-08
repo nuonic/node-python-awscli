@@ -35,39 +35,39 @@ RUN cd /tmp \
     && ldconfig \
     && cd /tmp \
     && rm -rf spatialindex-src-2.1.0*
-#
-# RUN cd /tmp \
-#     && curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
-#     && cd ./sqlite-autoconf-3450100 \
-#     && ./configure --prefix=/usr --libdir=/lib64 \
-#     && make \
-#     && make install \
-#     && rm -rf /tmp/sqlite-autoconf-3450100
-#
-# # Install AWS CLI v2
-# RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-#     && unzip awscliv2.zip  \
-#     && ./aws/install \
-#     && rm -rf aws awscliv2.zip
-#
-# # Install Python 3.10
-# RUN cd /tmp \
-#     && curl https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz | tar xzf - \
-#     && cd ./Python-3.10.11 \
-#     && ./configure --enable-optimizations --with-ensurepip=install \
-#     && make -j8 \
-#     && make altinstall \
-#     && pip3.10 install pipenv virtualenv --upgrade \
-#     && rm -r /tmp/Python-3.10.11
-#
-# # Install Python 3.11
-# RUN cd /tmp \
-#     && curl https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz | tar xzf - \
-#     && cd /tmp/Python-3.11.5 \
-#     && ./configure --enable-optimizations --with-ensurepip=install \
-#     && make -j8 \
-#     && make altinstall \
-#     && rm -r /tmp/Python-3.11.5
+
+RUN cd /tmp \
+    && curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
+    && cd ./sqlite-autoconf-3450100 \
+    && ./configure --prefix=/usr --libdir=/lib64 \
+    && make \
+    && make install \
+    && rm -rf /tmp/sqlite-autoconf-3450100
+
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip  \
+    && ./aws/install \
+    && rm -rf aws awscliv2.zip
+
+# Install Python 3.10
+RUN cd /tmp \
+    && curl https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz | tar xzf - \
+    && cd ./Python-3.10.11 \
+    && ./configure --enable-optimizations --with-ensurepip=install \
+    && make -j8 \
+    && make altinstall \
+    && pip3.10 install pipenv virtualenv --upgrade \
+    && rm -r /tmp/Python-3.10.11
+
+# Install Python 3.11
+RUN cd /tmp \
+    && curl https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz | tar xzf - \
+    && cd /tmp/Python-3.11.5 \
+    && ./configure --enable-optimizations --with-ensurepip=install \
+    && make -j8 \
+    && make altinstall \
+    && rm -r /tmp/Python-3.11.5
 
 # Install Python 3.12
 RUN cd /tmp \
