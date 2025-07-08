@@ -7,29 +7,34 @@ RUN cd /tmp \
     && dnf -y install p7zip p7zip-plugins freetype-devel libpng-devel wget git unzip cmake \
     && dnf -y install libtiff-devel sqlite-devel curl-devel pkgconfig
 
-# Install geospatial libraries (not available in AL2023 repos, must build from source)
+# Install geos from source (not in dnf)
 RUN cd /tmp \
-    && wget https://download.osgeo.org/proj/proj-9.3.0.tar.gz \
-    && tar -xzf proj-9.3.0.tar.gz \
-    && cd proj-9.3.0 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
-    && make -j$(nproc) && make install \
+    && curl -O https://download.osgeo.org/geos/geos-3.13.1.tar.bz2 \
+    && tar xvfj geos-3.13.1.tar.bz2 \
+    && cd geos-3.13.1 \
+    && mkdir _build \
+    && cd _build \
+    && cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        .. \
+    && make \
+    && ctest \
+    && make install
+
+# Install libspatialindex from source (not in dnf)
+RUN cd /tmp \
+    && wget https://github.com/libspatialindex/libspatialindex/releases/download/2.1.0/spatialindex-src-2.1.0.tar.bz2 \
+    && tar xvfj spatialindex-src-2.1.0.tar.bz2 \
+    && cd spatialindex-src-2.1.0 \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make \
+    && make install \
+    && ldconfig \
     && cd /tmp \
-    && wget https://download.osgeo.org/geos/geos-3.12.0.tar.bz2 \
-    && tar -xjf geos-3.12.0.tar.bz2 \
-    && cd geos-3.12.0 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .. \
-    && make -j$(nproc) && make install \
-    && cd /tmp \
-    && wget https://github.com/libspatialindex/spatialindex/releases/download/1.9.3/spatialindex-src-1.9.3.tar.bz2 \
-    && tar -xjf spatialindex-src-1.9.3.tar.bz2 \
-    && cd spatialindex-src-1.9.3 \
-    && ./configure --prefix=/usr \
-    && make -j$(nproc) && make install \
-    && rm -rf /tmp/proj-9.3.0* /tmp/geos-3.12.0* /tmp/spatialindex-src-1.9.3* \
-    && ldconfig
+    && rm -rf spatialindex-src-2.1.0*
 
 RUN cd /tmp \
     && curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
