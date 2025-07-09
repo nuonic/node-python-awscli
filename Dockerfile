@@ -6,7 +6,12 @@ RUN dnf -y update \
     && dnf -y groupinstall "Development Tools" \
     && dnf -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl openssl-devel readline-devel libffi-devel \
                       curl-devel bzip2-devel p7zip p7zip-plugins freetype-devel libpng-devel wget git \
-                      unzip cmake libtiff-devel sqlite-devel pkgconfig
+                      unzip cmake libtiff-devel sqlite-devel pkgconfig glibc-langpack-en
+
+# Set UTF-8 locale environment variables to ensure proper character encoding and avoid setlocale warnings
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 # Install geos from source (not in dnf)
 RUN curl -O https://download.osgeo.org/geos/geos-3.13.1.tar.bz2 \
