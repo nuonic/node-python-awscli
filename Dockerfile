@@ -109,6 +109,3 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
 
 # Cleanup
 RUN rm -rf /var/cache/dnf /tmp/* /var/tmp/*
-
-# Test caching
-RUN echo "Hello world! Cache is working!"
