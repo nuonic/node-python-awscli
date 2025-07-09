@@ -12,14 +12,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Extract branch name
-      id: branch-name
-      run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
-      env:
-        GITHUB_REF: ${{ github.ref }}
-
     - name: Log in to Docker Hub
-      if: github.ref == 'refs/heads/master'
+      if: ${{ github.ref_name == 'master' || github.ref_name == 'develop' }}
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -33,10 +27,14 @@ jobs:
       with:
         context: .
         load: true
-        tags: nuonic/node-python-awscli:latest
+        tags: nuonic/node-python-awscli:${{ github.ref_name }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Tag image with versions
+      if: github.ref_name == 'master'
+      run: make tag
+
     - name: Push Docker image
-      if: github.ref == 'refs/heads/master'
-      run: make tag push
+      if: ${{ github.ref_name == 'master' || github.ref_name == 'develop' }}
+      run: make push
