@@ -84,9 +84,8 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
     && make altinstall \
     && pip3.12 install pipenv virtualenv --upgrade
 
-# Install Node.js 18
-RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v18.17.1.tar.gz | tar -zxf - --strip-components=1 -C /usr/local \
-    && npm install --global yarn
+# Install Node.js 22 and yarn
+RUN dnf install -y nodejs22 && npm install --global yarn
 
 # Install Packer versions
 RUN wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -O /tmp/packer.zip \
