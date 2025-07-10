@@ -86,8 +86,10 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
 
 # Install Node.js 22 and npm 22
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
-    && source ~/.bashrc \
-    && nvm install --lts \
+    && export NVM_DIR="/root/.nvm" \
+    && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
+    && nvm install 22 \
+    && nvm use 22 \
     && node -e "console.log('Running Node.js ' + process.version)" \
     && npm --version
 
