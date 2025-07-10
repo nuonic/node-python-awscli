@@ -85,7 +85,7 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
     && pip3.12 install pipenv virtualenv --upgrade
 
 # Install Node.js 22 and yarn
-RUN dnf install -y nodejs22 && npm install --global yarn
+RUN dnf -y install nodejs22 && npm install --global yarn
 
 # Install Packer versions
 RUN wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -O /tmp/packer.zip \
