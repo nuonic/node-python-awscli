@@ -84,14 +84,8 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
     && make altinstall \
     && pip3.12 install pipenv virtualenv --upgrade
 
-# Install Node.js 22 and npm 22
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
-    && export NVM_DIR="/root/.nvm" \
-    && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
-    && nvm install 22 \
-    && nvm use 22 \
-    && node -e "console.log('Running Node.js ' + process.version)" \
-    && npm --version
+# Install Node.js 22
+RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v22.16.0.tar.gz | tar -zxf - --strip-components=1 -C /usr/local \
 
 # Install yarn
 RUN npm install --global yarn
