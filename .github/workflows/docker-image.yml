@@ -31,6 +31,10 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Tag image as latest
+      if: github.ref_name == 'master'
+      run: docker image tag nuonic/node-python-awscli:${{ github.ref_name }} nuonic/node-python-awscli:latest
+
     - name: Tag image with versions
       if: github.ref_name == 'master'
       run: make tag
