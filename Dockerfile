@@ -67,6 +67,7 @@ RUN curl https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz | tar xzf 
     && ./configure --enable-optimizations --with-ensurepip=install \
     && make -j8 \
     && make altinstall \
+    && python3.10 -m pip install --upgrade pip \
     && pip3.10 install pipenv virtualenv --upgrade
 
 # Install Python 3.11
@@ -74,7 +75,8 @@ RUN curl https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz | tar xzf - 
     && cd ./Python-3.11.5 \
     && ./configure --enable-optimizations --with-ensurepip=install \
     && make -j8 \
-    && make altinstall
+    && make altinstall \
+    && python3.11 -m pip install --upgrade pip
 
 # Install Python 3.12
 RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf - \
@@ -82,6 +84,7 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
     && ./configure --enable-optimizations --with-ensurepip=install \
     && make -j8 \
     && make altinstall \
+    && python3.12 -m pip install --upgrade pip \
     && pip3.12 install pipenv virtualenv --upgrade
 
 # Install Node.js 22
