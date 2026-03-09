@@ -2,7 +2,7 @@ ACCOUNT:=nuonic
 NAME:=node-python-awscli
 MAJOR:=7
 MINOR:=0
-PATCH:=1
+PATCH:=2
 
 build:
 	docker buildx build -t nuonic/node-python-awscli .

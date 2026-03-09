@@ -117,6 +117,10 @@ ENV PATH="${PATH}:/root/.local/bin"
 # Install Poetry
 RUN pip3.11 install poetry==1.8.5
 
+# Install UV
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN uv --version
+
 # Set SSL certificate path
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
 
