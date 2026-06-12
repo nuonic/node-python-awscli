@@ -1,14 +1,14 @@
 ACCOUNT:=nuonic
 NAME:=node-python-awscli
-MAJOR:=7
-MINOR:=2
+MAJOR:=8
+MINOR:=0
 PATCH:=0
 
 build:
 	docker buildx build -t nuonic/node-python-awscli .
 
 build-mac:
-	docker buildx build -t nuonic/node-python-awscli --platform linux/amd64 .
+	docker buildx build -t nuonic/node-python-awscli --platform linux/arm64 .
 
 tag:
 	docker image tag nuonic/node-python-awscli nuonic/node-python-awscli:$(MAJOR).$(MINOR).$(PATCH)

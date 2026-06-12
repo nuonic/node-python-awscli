@@ -57,7 +57,7 @@ RUN curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
     && make install
 
 # Install AWS CLI v2
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
     && unzip awscliv2.zip  \
     && ./aws/install
 
@@ -79,7 +79,7 @@ RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf 
     && pip3.12 install pipenv virtualenv --upgrade
 
 # Install Node.js 22
-RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v22.16.0.tar.gz | tar -zxf - --strip-components=1 -C /usr/local
+RUN curl https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-arm64.tar.gz | tar -zxf - --strip-components=1 -C /usr/local
 
 # Confirm node version
 RUN echo "Node version: $(node --version)"
@@ -88,10 +88,10 @@ RUN echo "Node version: $(node --version)"
 RUN npm install --global yarn
 
 # Install Packer versions
-RUN wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -O /tmp/packer.zip \
+RUN wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_arm64.zip -O /tmp/packer.zip \
     && mkdir ~/.bin \
     && unzip /tmp/packer.zip -d ~/.bin \
-    && wget https://releases.hashicorp.com/packer/1.7.5/packer_1.7.5_linux_amd64.zip -O /tmp/packer.zip \
+    && wget https://releases.hashicorp.com/packer/1.7.5/packer_1.7.5_linux_arm64.zip -O /tmp/packer.zip \
     && unzip -p /tmp/packer.zip > ~/.bin/packer-1.7.5 \
     && chmod +x ~/.bin/packer-1.7.5
 
