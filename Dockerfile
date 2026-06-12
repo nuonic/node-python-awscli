@@ -61,15 +61,6 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     && unzip awscliv2.zip  \
     && ./aws/install
 
-# Install Python 3.10
-RUN curl https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz | tar xzf - \
-    && cd ./Python-3.10.11 \
-    && ./configure --enable-optimizations --with-ensurepip=install \
-    && make -j8 \
-    && make altinstall \
-    && python3.10 -m pip install --upgrade pip \
-    && pip3.10 install pipenv virtualenv --upgrade
-
 # Install Python 3.11
 RUN curl https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz | tar xzf - \
     && cd ./Python-3.11.5 \
@@ -115,7 +106,7 @@ RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/ge
 ENV PATH="${PATH}:/root/.local/bin"
 
 # Install Poetry
-RUN pip3.11 install poetry==1.8.5
+RUN pip3.12 install poetry==2.4.1
 
 # Install UV
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
