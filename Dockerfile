@@ -149,12 +149,15 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /tmp
 
-# Explicit toolchain instead of the "Development Tools" group, which drags in
-# gdb, valgrind, systemtap, rpm-build, subversion and friends. Headers are kept
-# so pipelines can still build Python wheels from sdists.
+# Explicit toolchain instead of the "Development Tools" group. Keeps the group's
+# build tools (compilers, autotools, bison/flex, diff/patch utilities, gettext,
+# swig) but drops gdb, systemtap, rpm-build, subversion, doxygen and graphviz.
+# Headers are kept so pipelines can still build Python wheels from sdists.
 RUN dnf -y -q update \
     && dnf -y -q install \
-        gcc gcc-c++ make binutils patch autoconf automake libtool pkgconfig cmake \
+        gcc gcc-c++ gcc-gfortran make binutils patch autoconf automake libtool pkgconfig cmake \
+        diffutils patchutils diffstat bison flex byacc swig gettext gettext-devel intltool elfutils \
+        cpio zstd gnupg2-minimal \
         git wget unzip tar gzip bzip2 xz findutils which p7zip p7zip-plugins glibc-langpack-en \
         zlib-devel ncurses-devel gdbm-devel nss-devel openssl openssl-devel readline-devel libffi-devel \
         curl-devel bzip2-devel xz-devel libuuid-devel freetype-devel libpng-devel libtiff-devel sqlite-devel \
@@ -213,6 +216,9 @@ RUN node --version \
     && geos-config --version \
     && projinfo EPSG:4326 > /dev/null \
     && [[ "$(make --version)" == "GNU Make 4.4"* ]] \
+    && diff --version > /dev/null \
+    && envsubst --version > /dev/null \
+    && zstd --version > /dev/null \
     && uv --version \
     && /root/.bin/packer version \
     && /root/.bin/packer-1.7.5 version
