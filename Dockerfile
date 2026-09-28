@@ -1,128 +1,224 @@
+# syntax=docker/dockerfile:1
+
+ARG UV_VERSION=latest
+
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
+
+###############################################################################
+# Build toolchain. Each component below is compiled in its own stage, so
+# BuildKit builds them in parallel and a version bump only rebuilds that one
+# component. None of the compilers, source trees or build dirs reach the final
+# image — only the installed artefacts are copied across.
+###############################################################################
+FROM amazonlinux:2023 AS builder
+
+# Fail on any command in a pipeline (e.g. a failed download piped into tar).
+# Inherited by every stage built FROM this one.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN dnf -y -q install --setopt=install_weak_deps=False \
+        gcc gcc-c++ make cmake pkgconfig tar gzip bzip2 xz unzip findutils sqlite \
+        zlib-devel ncurses-devel gdbm-devel nss-devel openssl-devel readline-devel libffi-devel \
+        curl-devel bzip2-devel xz-devel libuuid-devel libtiff-devel sqlite-devel \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+# Runs a command with its output hidden, printing the tail of it only if the
+# command fails. Keeps the CI log readable (the compilers otherwise emit tens of
+# thousands of lines) and under BuildKit's per-step log limit.
+COPY --chmod=755 <<'EOF' /usr/local/bin/quiet
+#!/bin/bash
+log=$(mktemp)
+"$@" > "$log" 2>&1 || { rc=$?; tail -n 300 "$log"; exit "$rc"; }
+rm -f "$log"
+EOF
+
+WORKDIR /src
+
+# ---------------------------------------------------------------------------
+FROM builder AS geos
+ARG GEOS_VERSION=3.13.1
+RUN curl -fsSL https://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 | tar xjf - \
+    && quiet cmake -S geos-${GEOS_VERSION} -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF \
+    && quiet cmake --build build -j"$(nproc)" \
+    && DESTDIR=/out quiet cmake --install build --strip
+
+# ---------------------------------------------------------------------------
+FROM builder AS spatialindex
+ARG SPATIALINDEX_VERSION=2.1.0
+RUN curl -fsSL https://github.com/libspatialindex/libspatialindex/releases/download/${SPATIALINDEX_VERSION}/spatialindex-src-${SPATIALINDEX_VERSION}.tar.bz2 | tar xjf - \
+    && quiet cmake -S spatialindex-src-${SPATIALINDEX_VERSION} -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF \
+    && quiet cmake --build build -j"$(nproc)" \
+    && DESTDIR=/out quiet cmake --install build --strip
+
+# ---------------------------------------------------------------------------
+FROM builder AS proj
+ARG PROJ_VERSION=9.6.2
+RUN curl -fsSL https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz | tar xzf - \
+    && quiet cmake -S proj-${PROJ_VERSION} -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DBUILD_TESTING=OFF \
+    && quiet cmake --build build -j"$(nproc)" \
+    && DESTDIR=/out quiet cmake --install build --strip
+
+# ---------------------------------------------------------------------------
+# Installed straight into /usr/local (which is otherwise empty in this stage)
+# so the Python stages below can build against it.
+FROM builder AS sqlite
+ARG SQLITE_YEAR=2024
+ARG SQLITE_VERSION=3450100
+RUN curl -fsSL https://sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.tar.gz | tar xzf - \
+    && cd sqlite-autoconf-${SQLITE_VERSION} \
+    && quiet ./configure --prefix=/usr/local \
+    && quiet make -j"$(nproc)" \
+    && quiet make install-strip \
+    && rm -rf /usr/local/share/man
+
+# ---------------------------------------------------------------------------
+# pip is bootstrapped in the final stage with `ensurepip`, so its scripts get
+# correct shebangs. The rpath makes the sqlite3 module use the sqlite above.
+FROM sqlite AS python311
+ARG PYTHON_VERSION=3.11.5
+RUN curl -fsSL https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz | tar xzf - \
+    && cd Python-${PYTHON_VERSION} \
+    && PKG_CONFIG_PATH=/usr/local/lib/pkgconfig quiet ./configure \
+        --enable-optimizations \
+        --without-ensurepip \
+        LDFLAGS="-Wl,-rpath,/usr/local/lib" \
+    && quiet make -j"$(nproc)" \
+    && quiet make altinstall DESTDIR=/out \
+    && find /out/usr/local/lib -depth -type d \( -name test -o -name tests -o -name idle_test \) -exec rm -rf {} + \
+    && find /out/usr/local/lib -type f -name '*.so' -exec strip --strip-unneeded {} + \
+    && find /out/usr/local/lib -type f -name 'libpython*.a' -exec strip --strip-debug {} + \
+    && strip --strip-unneeded /out/usr/local/bin/python${PYTHON_VERSION%.*}
+
+# ---------------------------------------------------------------------------
+FROM sqlite AS python312
+ARG PYTHON_VERSION=3.12.11
+RUN curl -fsSL https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz | tar xzf - \
+    && cd Python-${PYTHON_VERSION} \
+    && PKG_CONFIG_PATH=/usr/local/lib/pkgconfig quiet ./configure \
+        --enable-optimizations \
+        --without-ensurepip \
+        LDFLAGS="-Wl,-rpath,/usr/local/lib" \
+    && quiet make -j"$(nproc)" \
+    && quiet make altinstall DESTDIR=/out \
+    && find /out/usr/local/lib -depth -type d \( -name test -o -name tests -o -name idle_test \) -exec rm -rf {} + \
+    && find /out/usr/local/lib -type f -name '*.so' -exec strip --strip-unneeded {} + \
+    && find /out/usr/local/lib -type f -name 'libpython*.a' -exec strip --strip-debug {} + \
+    && strip --strip-unneeded /out/usr/local/bin/python${PYTHON_VERSION%.*}
+
+# ---------------------------------------------------------------------------
+FROM builder AS gnumake
+ARG MAKE_VERSION=4.4
+RUN curl -fsSL https://ftp.gnu.org/gnu/make/make-${MAKE_VERSION}.tar.gz | tar xzf - \
+    && cd make-${MAKE_VERSION} \
+    && quiet ./configure --prefix=/usr/local \
+    && quiet make -j"$(nproc)" \
+    && quiet make install-strip DESTDIR=/out \
+    && rm -rf /out/usr/local/share/info /out/usr/local/share/man
+
+# ---------------------------------------------------------------------------
+FROM builder AS awscli
+RUN curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip \
+    && unzip -q awscliv2.zip \
+    && ./aws/install --install-dir /usr/local/aws-cli --bin-dir /usr/local/bin
+
+# ---------------------------------------------------------------------------
+FROM builder AS packer
+RUN mkdir /out \
+    && curl -fsSL https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -o packer-1.2.2.zip \
+    && unzip -q packer-1.2.2.zip -d /out \
+    && curl -fsSL https://releases.hashicorp.com/packer/1.7.5/packer_1.7.5_linux_amd64.zip -o packer-1.7.5.zip \
+    && unzip -p packer-1.7.5.zip packer > /out/packer-1.7.5 \
+    && chmod +x /out/packer-1.7.5
+
+###############################################################################
+# Final image
+###############################################################################
 FROM amazonlinux:2023
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /tmp
 
-RUN dnf -y update \
-    && dnf -y groupinstall "Development Tools" \
-    && dnf -y install zlib-devel ncurses-devel gdbm-devel nss-devel openssl openssl-devel readline-devel libffi-devel \
-                      curl-devel bzip2-devel p7zip p7zip-plugins freetype-devel libpng-devel wget git \
-                      unzip cmake libtiff-devel sqlite-devel pkgconfig glibc-langpack-en
+# Explicit toolchain instead of the "Development Tools" group. Keeps the group's
+# build tools (compilers, autotools, bison/flex, diff/patch utilities, gettext,
+# swig) but drops gdb, systemtap, rpm-build, subversion, doxygen and graphviz.
+# Headers are kept so pipelines can still build Python wheels from sdists.
+RUN dnf -y -q update \
+    && dnf -y -q install \
+        gcc gcc-c++ gcc-gfortran make binutils patch autoconf automake libtool pkgconfig cmake \
+        diffutils patchutils diffstat bison flex byacc swig gettext gettext-devel intltool elfutils \
+        cpio zstd gnupg2-minimal \
+        git wget unzip tar gzip bzip2 xz findutils which p7zip p7zip-plugins glibc-langpack-en \
+        zlib-devel ncurses-devel gdbm-devel nss-devel openssl openssl-devel readline-devel libffi-devel \
+        curl-devel bzip2-devel xz-devel libuuid-devel freetype-devel libpng-devel libtiff-devel sqlite-devel \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/log/dnf* \
+    && printf '/usr/local/lib\n/usr/local/lib64\n' > /etc/ld.so.conf.d/usr-local.conf
 
 # Set UTF-8 locale environment variables to ensure proper character encoding and avoid setlocale warnings
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt \
+    PATH="${PATH}:/root/.local/bin"
 
-# Install geos from source (not in dnf)
-RUN curl -O https://download.osgeo.org/geos/geos-3.13.1.tar.bz2 \
-    && tar xvfj geos-3.13.1.tar.bz2 \
-    && cd geos-3.13.1 \
-    && mkdir _build \
-    && cd _build \
-    && cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        .. \
-    && make \
-    && ctest \
-    && make install
+COPY --from=sqlite       /usr/local/         /usr/local/
+COPY --from=geos         /out/usr/local/     /usr/local/
+COPY --from=spatialindex /out/usr/local/     /usr/local/
+COPY --from=proj         /out/usr/local/     /usr/local/
+COPY --from=gnumake      /out/usr/local/     /usr/local/
+COPY --from=awscli       /usr/local/aws-cli/ /usr/local/aws-cli/
+COPY --from=packer       /out/               /root/.bin/
+COPY --from=python311    /out/usr/local/     /usr/local/
+COPY --from=python312    /out/usr/local/     /usr/local/
 
-# Install libspatialindex from source (not in dnf)
-RUN wget https://github.com/libspatialindex/libspatialindex/releases/download/2.1.0/spatialindex-src-2.1.0.tar.bz2 \
-    && tar xvfj spatialindex-src-2.1.0.tar.bz2 \
-    && cd spatialindex-src-2.1.0 \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make \
-    && make install \
-    && ldconfig
+# 3.11 first, then 3.12, so the unversioned pip/pip3 scripts belong to 3.12
+RUN ldconfig \
+    && ln -s /usr/local/aws-cli/v2/current/bin/aws /usr/local/bin/aws \
+    && ln -s /usr/local/aws-cli/v2/current/bin/aws_completer /usr/local/bin/aws_completer \
+    && python3.11 -m ensurepip --altinstall \
+    && python3.11 -m pip install -q --no-cache-dir --upgrade pip \
+    && python3.12 -m ensurepip --altinstall \
+    && python3.12 -m pip install -q --no-cache-dir --upgrade pip \
+    && pip3.12 install -q --no-cache-dir --upgrade pipenv virtualenv poetry==2.4.1
 
-# Install proj (not in dnf)
-RUN wget https://download.osgeo.org/proj/proj-9.6.2.tar.gz \
-    && tar xzf proj-9.6.2.tar.gz \
-    && cd proj-9.6.2 \
-    && mkdir build \
-    && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local .. \
-    && cmake --build . \
-    && ctest \
-    && cmake --build . --target install \
-    && ldconfig
+# Node.js 22 and yarn
+RUN curl -fsSL https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v22.16.0.tar.gz \
+        | tar -xzf - --strip-components=1 -C /usr/local \
+            --exclude='*/CHANGELOG.md' --exclude='*/README.md' --exclude='*/LICENSE' --exclude='*/share/doc' \
+    && npm install --global --no-fund --no-audit --loglevel=error yarn \
+    && npm cache clean --force --loglevel=error
 
-RUN curl https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xzf - \
-    && cd ./sqlite-autoconf-3450100 \
-    && ./configure --prefix=/usr --libdir=/lib64 \
-    && make \
-    && make install
-
-# Install AWS CLI v2
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip  \
-    && ./aws/install
-
-# Install Python 3.10
-RUN curl https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz | tar xzf - \
-    && cd ./Python-3.10.11 \
-    && ./configure --enable-optimizations --with-ensurepip=install \
-    && make -j8 \
-    && make altinstall \
-    && python3.10 -m pip install --upgrade pip \
-    && pip3.10 install pipenv virtualenv --upgrade
-
-# Install Python 3.11
-RUN curl https://www.python.org/ftp/python/3.11.5/Python-3.11.5.tgz | tar xzf - \
-    && cd ./Python-3.11.5 \
-    && ./configure --enable-optimizations --with-ensurepip=install \
-    && make -j8 \
-    && make altinstall \
-    && python3.11 -m pip install --upgrade pip
-
-# Install Python 3.12
-RUN curl https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tgz | tar xzf - \
-    && cd ./Python-3.12.11 \
-    && ./configure --enable-optimizations --with-ensurepip=install \
-    && make -j8 \
-    && make altinstall \
-    && python3.12 -m pip install --upgrade pip \
-    && pip3.12 install pipenv virtualenv --upgrade
-
-# Install Node.js 22
-RUN curl https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v22.16.0.tar.gz | tar -zxf - --strip-components=1 -C /usr/local
-
-# Confirm node version
-RUN echo "Node version: $(node --version)"
-
-# Install yarn
-RUN npm install --global yarn
-
-# Install Packer versions
-RUN wget https://releases.hashicorp.com/packer/1.2.2/packer_1.2.2_linux_amd64.zip -O /tmp/packer.zip \
-    && mkdir ~/.bin \
-    && unzip /tmp/packer.zip -d ~/.bin \
-    && wget https://releases.hashicorp.com/packer/1.7.5/packer_1.7.5_linux_amd64.zip -O /tmp/packer.zip \
-    && unzip -p /tmp/packer.zip > ~/.bin/packer-1.7.5 \
-    && chmod +x ~/.bin/packer-1.7.5
-
-# Install GNU Make 4.4
-RUN wget https://ftp.gnu.org/gnu/make/make-4.4.tar.gz -O - | tar -vzxf - -C /tmp \
-    && cd /tmp/make-4.4 \
-    && ./configure \
-    && make install
-
-# Install Pants
+# Pants launcher
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh | bash
-ENV PATH="${PATH}:/root/.local/bin"
 
-# Install Poetry
-RUN pip3.11 install poetry==1.8.5
+# uv / uvx
+COPY --from=uv /uv /uvx /usr/local/bin/
 
-# Install UV
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-RUN uv --version
-
-# Set SSL certificate path
-ENV SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
-
-# Cleanup
-RUN rm -rf /var/cache/dnf /tmp/* /var/tmp/*
+# Smoke test the toolchain
+RUN node --version \
+    && yarn --version \
+    && aws --version \
+    && python3.11 -c "import sqlite3, ssl, lzma, ctypes" \
+    && python3.12 -c "import sqlite3, ssl, lzma, ctypes; assert sqlite3.sqlite_version == '3.45.1', sqlite3.sqlite_version" \
+    && [[ "$(pip --version)" == *"python 3.12"* ]] \
+    && poetry --version \
+    && geos-config --version \
+    && projinfo EPSG:4326 > /dev/null \
+    && [[ "$(make --version)" == "GNU Make 4.4"* ]] \
+    && diff --version > /dev/null \
+    && envsubst --version > /dev/null \
+    && zstd --version > /dev/null \
+    && uv --version \
+    && /root/.bin/packer version \
+    && /root/.bin/packer-1.7.5 version
