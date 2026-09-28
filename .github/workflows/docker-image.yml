@@ -31,6 +31,28 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+    - name: Report image size
+      env:
+        IMAGE: nuonic/node-python-awscli:${{ github.ref_name }}
+      run: |
+        uncompressed=$(docker image inspect "$IMAGE" --format '{{.Size}}')
+        # Gzipped export approximates the compressed size Docker Hub reports
+        compressed=$(docker save "$IMAGE" | gzip | wc -c)
+        {
+          echo "### Image size"
+          echo "| | Size |"
+          echo "|---|---|"
+          echo "| Uncompressed (on disk) | $(numfmt --to=iec --suffix=B "$uncompressed") |"
+          echo "| Compressed (approx. Docker Hub size) | $(numfmt --to=iec --suffix=B "$compressed") |"
+          echo
+          echo "<details><summary>Layers</summary>"
+          echo
+          echo '```'
+          docker history --no-trunc --format 'table {{.Size}}\t{{.CreatedBy}}' "$IMAGE" | cut -c1-160
+          echo '```'
+          echo "</details>"
+        } >> "$GITHUB_STEP_SUMMARY"
+
     - name: Tag image as latest
       if: github.ref_name == 'master'
       run: docker image tag nuonic/node-python-awscli:${{ github.ref_name }} nuonic/node-python-awscli:latest
