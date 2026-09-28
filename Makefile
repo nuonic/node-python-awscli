@@ -4,6 +4,9 @@ MAJOR:=7
 MINOR:=3
 PATCH:=0
 
+version:
+	@echo $(MAJOR).$(MINOR).$(PATCH)
+
 build:
 	docker buildx build -t nuonic/node-python-awscli .
 
