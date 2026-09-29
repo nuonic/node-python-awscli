@@ -2,6 +2,9 @@ name: Docker Image CI
 
 on: push
 
+env:
+  IMAGE: nuonic/node-python-awscli
+
 jobs:
 
   build:
@@ -10,11 +13,33 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+
+    - name: Read version from Makefile
+      id: version
+      run: |
+        version=$(make -s version)
+        echo "full=${version}" >> "$GITHUB_OUTPUT"
+        echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+        echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
+
+    # Every branch: :<branch> (moving) and :sha-<commit> (fixed)
+    # master only:  :latest, :X.Y.Z, :X.Y, :X
+    - name: Generate image tags
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.IMAGE }}
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ steps.version.outputs.full }},enable={{is_default_branch}}
+          type=raw,value=${{ steps.version.outputs.minor }},enable={{is_default_branch}}
+          type=raw,value=${{ steps.version.outputs.major }},enable={{is_default_branch}}
 
     - name: Log in to Docker Hub
-      if: ${{ github.ref_name == 'master' || github.ref_name == 'develop' }}
-      uses: docker/login-action@v1
+      uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
@@ -23,22 +48,45 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         load: true
-        tags: nuonic/node-python-awscli:${{ github.ref_name }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Tag image as latest
-      if: github.ref_name == 'master'
-      run: docker image tag nuonic/node-python-awscli:${{ github.ref_name }} nuonic/node-python-awscli:latest
-
-    - name: Tag image with versions
-      if: github.ref_name == 'master'
-      run: make tag
+    - name: Report image size
+      env:
+        IMAGE_REF: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        TAGS: ${{ steps.meta.outputs.tags }}
+      run: |
+        uncompressed=$(docker image inspect "$IMAGE_REF" --format '{{.Size}}')
+        # Gzipped export approximates the compressed size Docker Hub reports
+        compressed=$(docker save "$IMAGE_REF" | gzip | wc -c)
+        {
+          echo "### Image"
+          echo '```'
+          echo "$TAGS"
+          echo '```'
+          echo "| | Size |"
+          echo "|---|---|"
+          echo "| Uncompressed (on disk) | $(numfmt --to=iec --suffix=B "$uncompressed") |"
+          echo "| Compressed (approx. Docker Hub size) | $(numfmt --to=iec --suffix=B "$compressed") |"
+          echo
+          echo "<details><summary>Layers</summary>"
+          echo
+          echo '```'
+          docker history --no-trunc --format 'table {{.Size}}\t{{.CreatedBy}}' "$IMAGE_REF" | cut -c1-160
+          echo '```'
+          echo "</details>"
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Push Docker image
-      if: ${{ github.ref_name == 'master' || github.ref_name == 'develop' }}
-      run: make push
+      env:
+        TAGS: ${{ steps.meta.outputs.tags }}
+      run: |
+        while read -r tag; do
+          docker push "$tag"
+        done <<< "$TAGS"
