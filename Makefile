@@ -2,7 +2,7 @@ ACCOUNT:=nuonic
 NAME:=node-python-awscli
 MAJOR:=7
 MINOR:=3
-PATCH:=0
+PATCH:=1
 
 version:
 	@echo $(MAJOR).$(MINOR).$(PATCH)

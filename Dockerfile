@@ -193,9 +193,16 @@ RUN ldconfig \
     && pip3.12 install -q --no-cache-dir --upgrade pipenv virtualenv poetry==2.4.1
 
 # Node.js 22 and yarn
-RUN curl -fsSL https://d3rnber7ry90et.cloudfront.net/linux-x86_64/node-v22.16.0.tar.gz \
-        | tar -xzf - --strip-components=1 -C /usr/local \
+# Official nodejs.org build. NODE_SHA256 comes from the release's signed SHASUMS256.txt.asc,
+# so bump both together.
+ARG NODE_VERSION=22.23.4
+ARG NODE_SHA256=b8492284c76a54baf58d61668dd0e41ee0fc98adabf9503d30f05d08f55b4406
+RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz" -o node.tar.gz \
+    && echo "${NODE_SHA256}  node.tar.gz" | sha256sum -c - \
+    && tar -xzf node.tar.gz --strip-components=1 -C /usr/local \
             --exclude='*/CHANGELOG.md' --exclude='*/README.md' --exclude='*/LICENSE' --exclude='*/share/doc' \
+    && rm node.tar.gz \
+    && [[ "$(node --version)" == "v${NODE_VERSION}" ]] \
     && npm install --global --no-fund --no-audit --loglevel=error yarn \
     && npm cache clean --force --loglevel=error
 
